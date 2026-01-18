@@ -28,11 +28,23 @@ jobs:
             -e "ssh -i ~/.ssh/ec2.pem" \
             ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app
 
-      - name: Install dependencies & reload services
+      - name: Install dependencies & start/reload services
         run: |
           ssh -i ~/.ssh/ec2.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd ~/app/user-service && npm install
-            cd ~/app/order-service && npm install
-            cd ~/app/payment-service && npm install
-            pm2 reload all
+            set -e
+
+            cd ~/app/user-service
+            npm install
+            pm2 start index.js --name user-service || pm2 restart user-service
+
+            cd ~/app/order-service
+            npm install
+            pm2 start index.js --name order-service || pm2 restart order-service
+
+            cd ~/app/payment-service
+            npm install
+            pm2 start index.js --name payment-service || pm2 restart payment-service
+
+            pm2 save
           EOF
+
